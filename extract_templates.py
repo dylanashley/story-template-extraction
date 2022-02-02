@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument(
         "--template-size",
         type=int,
-        default=6,
+        default=12,
         help="number of points in a template",
     )
     parser.add_argument(
@@ -96,8 +96,15 @@ def load_data(filename):
             max_album_track = max(max_album_track, raw_track["track number"])
         for i, (track_number, valence) in enumerate(album):
             album[i] = (
-                scale(track_number, min(1, min_album_track), max_album_track, 0, 1),
-                valence,
+                scale(
+                    track_number,
+                    min(1, min_album_track),
+                    max_album_track,
+                    0,
+                    1,
+                ),
+                (valence - np.mean([v[1] for v in album]))
+                / np.std([v[1] for v in album]),
             )
         if raw_album[0]["set split"] == "training":
             training.append(album)
