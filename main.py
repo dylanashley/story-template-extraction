@@ -5,12 +5,10 @@ import argparse
 import functools
 import json
 import logging
-import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
 import scipy.interpolate
-import seaborn as sns
 
 
 def parse_args():
@@ -18,14 +16,8 @@ def parse_args():
     parser.add_argument(
         "--num-templates",
         type=int,
-        default=6,
+        default=4,
         help="number of templates",
-    )
-    parser.add_argument(
-        "--template-size",
-        type=int,
-        default=12,
-        help="number of points in a template",
     )
     parser.add_argument(
         "--num-generations",
@@ -61,8 +53,11 @@ def parse_args():
         help="don't plot the final narrative arc template curves",
     )
     args = vars(parser.parse_args())
+    if not args["no_plot"]:
+        global plt, sns
+        import matplotlib.pyplot as plt
+        import seaborn as sns
     assert args["num_templates"] > 0
-    assert args["template_size"] > 3
     assert args["num_generations"] > 0
     assert args["population_size"] > 0
     if args["outfile"] is not None and os.path.exists(args["outfile"]):
@@ -119,13 +114,13 @@ def load_data(filename):
 
 
 def init_templates():
-    return np.random.uniform(size=(args["num_templates"], args["template_size"]))
+    return np.zeros((args["num_templates"], 7))
 
 
 def expand_templates(tpls):
     return [
         scipy.interpolate.interp1d(
-            np.linspace(0, 1, num=args["template_size"]),
+            [0.0, 0.2, 0.3, 0.5, 0.65, 0.8, 1.0],
             tpls[i, :],
             kind="cubic",
         )
@@ -158,11 +153,9 @@ def crossover(population):
         father, mother = population[father_idx], population[mother_idx]
         child = np.zeros_like(father)
         for i in range(child.shape[0]):
-            r = np.random.randint(1, child.shape[1])
-            l = np.random.randint(r)
-            np.copyto(child[i, :l], father[i, :l])
-            np.copyto(child[i, l:r], mother[i, l:r])
-            np.copyto(child[i, r:], father[i, r:])
+            mask = np.random.randint(2, size=child.shape[1])
+            child += father * mask
+            child += mother * (1 - mask)
         children.append(child)
     return children
 
