@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT=$(dirname "$0")'/__main__.py'
+DIR=$(dirname "$0")
 TASKS_PER_FILE=1
 
 # assert command line arguments valid
@@ -18,12 +18,20 @@ rm tasks.sh 2>/dev/null
 ###############################################################################
 
 for SEED in `seq 0 9`; do
-    for NUM_TEMPLATES in `seq 1 12`; do
-        OUTFILE="$NUM_TEMPLATES"'_'"$SEED"'.npy'
+    for NUM_TEMPLATES in `seq 1 6`; do
+        OUTFILE='valence_'"$NUM_TEMPLATES"'_'"$SEED"'.npy'
         ARGS=("--num-templates=$NUM_TEMPLATES"
+              "--outfile=$OUTFILE"
               "--seed='$SEED'"
               "--no-plot")
-        echo 'python -O '"$SCRIPT"' '"${ARGS[*]}" >> tasks.sh
+        echo 'python -O '"$DIR"'/valence.py '"${ARGS[*]}" >> tasks.sh
+
+        OUTFILE='narrative_essence_'"$NUM_TEMPLATES"'_'"$SEED"'.npy'
+        ARGS=("--num-templates=$NUM_TEMPLATES"
+              "--outfile=$OUTFILE"
+              "--seed='$SEED'"
+              "--no-plot")
+        echo 'python -O '"$DIR"'/narrative_essence.py '"${ARGS[*]}" >> tasks.sh
     done
 done
 

@@ -9,20 +9,21 @@ import multiprocessing
 import numpy as np
 import os
 import scipy.interpolate
+import sys
 
 
-def parse_args():
+def parse_args(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--num-templates",
         type=int,
-        default=4,
         help="number of templates",
+        required=True,
     )
     parser.add_argument(
         "--num-generations",
         type=int,
-        default=360,
+        default=120,
         help="number of optimization iterations",
     )
     parser.add_argument(
@@ -52,7 +53,7 @@ def parse_args():
         action="store_true",
         help="don't plot the final narrative arc template curves",
     )
-    args = vars(parser.parse_args())
+    args = vars(parser.parse_args(args))
     if not args["no_plot"]:
         global plt, sns
         import matplotlib.pyplot as plt
@@ -74,10 +75,11 @@ def scale(
     return end_min + (end_max - end_min) * (value - start_min) / (start_max - start_min)
 
 
-def load_data(filename):
+def load_data():
+    filename = "fma_albums_small.json"
     with open(filename, "r") as infile:
         raw_data = json.load(infile)
-    logging.info("successfully parsed json in {}".format(filename))
+    logging.info("successfully parsed {}".format(filename))
     training, validation, test = list(), list(), list()
     stats = {"min_track_number": float("inf"), "max_track_number": 0}
     while raw_data:
@@ -152,10 +154,11 @@ def crossover(population):
         )
         father, mother = population[father_idx], population[mother_idx]
         child = np.zeros_like(father)
-        for i in range(child.shape[0]):
-            mask = np.random.randint(2, size=child.shape[1])
-            child += father * mask
-            child += mother * (1 - mask)
+        mask = np.transpose(
+            np.tile(np.random.randint(2, size=child.shape[0]), (child.shape[1], 1))
+        )
+        child += father * mask
+        child += mother * (1 - mask)
         children.append(child)
     return children
 
@@ -211,7 +214,7 @@ def main():
     args = parse_args()
     if args["seed"] is not None:
         np.random.seed(args["seed"])
-    (training, validation, test), stats = load_data("fma_albums_with_echonest.json")
+    (training, validation, test), stats = load_data()
     tpls = optimize(
         [init_templates() for _ in range(args["population_size"])], training
     )
